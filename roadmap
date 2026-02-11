@@ -1,0 +1,151 @@
+Here is a clean, GitHub-ready ROADMAP.md file. You can copy this directly.
+
+Cryptoglyph-Necrotek Roadmap
+
+This document tracks planned upgrades, structural improvements, and known issues for Cryptoglyph-Necrotek.
+
+Current Version: v1.0.0
+
+Known Issues
+K1 — Connector Geometry Refinement
+
+Status: Open
+Priority: Medium
+
+Description
+
+The bottom-arc connector is functionally correct but requires further refinement for optimal visual balance.
+
+Observed Behavior
+
+Slight visual heaviness at higher stroke widths
+
+Minor proportional imbalance between arc and oval
+
+Connector spacing sensitivity in dense column layouts
+
+Planned Improvements
+
+Micro-offset tuning based on stroke width
+
+Normalize arc-to-oval proportions
+
+Refine vertical spacing for consistent flow
+
+Evaluate optional alternate connector style
+
+Planned Updates
+v1.1.0 — Numbers & Punctuation Expansion
+
+Goal: Achieve full sentence and numeric support.
+
+1. Expanded Punctuation Set
+
+Add glyph support for:
+
+! Exclamation
+
+? Question mark
+
+: Colon
+
+; Semicolon
+
+' Apostrophe
+
+" Quotation marks
+
+- Dash / Hyphen
+
+( ) Parentheses
+
+Acceptance Criteria
+
+All punctuation renders correctly in Canvas
+
+SVG export matches Canvas output
+
+Spacing rules remain consistent
+
+No connector behavior applied to punctuation
+
+2. Numeric Glyph System (0–9)
+
+Add glyph definitions for digits:
+
+0 1 2 3 4 5 6 7 8 9
+
+Design Requirements
+
+Inline placement (not stacked)
+
+No connector linking between digits
+
+Consistent vertical rhythm with letter glyphs
+
+Compatible with column wrap mode
+
+Acceptance Criteria
+
+Numbers render anywhere in text
+
+SVG export parity maintained
+
+No layout corruption
+
+3. Symbol Layer Expansion
+
+Initial symbol support candidates:
+
+@ # $ % & * + =
+
+/ \ _
+
+[ ] { } < >
+
+Acceptance Criteria
+
+Unsupported characters degrade gracefully
+
+Optional placeholder glyph for unknown characters
+
+Structural Improvements (Post v1.1)
+Data-Driven Glyph Architecture
+
+Refactor glyph definitions into a structured format to:
+
+Reduce manual geometry duplication
+
+Improve maintainability
+
+Simplify adding punctuation and symbols
+
+Ensure Canvas and SVG share a single glyph definition source
+
+Export Controls Enhancement
+
+Planned additions:
+
+Transparent vs solid background toggle (PNG)
+
+Export scale multiplier
+
+SVG stroke scaling toggle
+
+Version Targets
+Version	Focus
+v1.0.0	Initial public release
+v1.1.0	Numbers + punctuation
+v1.2.x	Symbol expansion + connector refinement
+v1.3.x	Structural refactor + export improvements
+Long-Term Vision
+
+Fully extensible glyph definition engine
+
+Multiple connector styles
+
+Glyph preview palette
+
+Themed rendering presets
+
+Advanced export configuration

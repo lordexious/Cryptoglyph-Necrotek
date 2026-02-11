@@ -1,0 +1,910 @@
+<!--
+MIT License
+
+Copyright (c) 2026 EXIOUS
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- GitHub export-ready metadata -->
+  <title>Cryptoglyph-Necrotek — v0.2</title>
+  <meta name="description" content="Cryptoglyph-Necrotek: a local-first, Necron-inspired glyph renderer with PNG + clean SVG export (no glow). Runs in modern browsers without a server." />
+  <meta name="author" content="EXIOUS" />
+  <meta name="keywords" content="cryptic language, crypt, glyph renderer, canvas, svg export, typography, conlang" />
+  <meta name="license" content="MIT" />
+  <meta name="application-name" content="Cryptoglyph-Necrotek" />
+  <meta name="version" content="v0.2" />
+  <meta name="referrer" content="no-referrer" />
+
+  <!-- Social/preview (safe defaults for GitHub Pages / static hosting) -->
+  <meta property="og:title" content="Cryptoglyph-Necrotek — v0.2" />
+  <meta property="og:description" content="A local-run glyph renderer with PNG + SVG export." />
+  <meta property="og:type" content="website" />
+
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #000;
+      color: #d6d6d6;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    .grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      border: 1px solid #1f1f1f;
+      background: #0b0b0b;
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 140px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #2a2a2a;
+      background: #070707;
+      color: #eaeaea;
+      resize: vertical;
+      line-height: 1.35;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+
+    /* Resizable preview pane */
+    #previewPane{
+      width: 100%;
+      height: 520px;              /* starting height */
+      min-height: 240px;
+      min-width: 280px;
+      resize: both;               /* drag to resize */
+      overflow: hidden;
+      border-radius: 14px;
+      border: 1px solid #1f1f1f;
+      background: #000;
+      position: relative;
+      box-sizing: border-box;
+    }
+
+    /* Canvas fills the resizable container */
+    #alienCanvas{
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .topbar {
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom: 6px;
+    }
+    .title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 650;
+      letter-spacing: 0.2px;
+    }
+    .topActions {
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .pill {
+      font-size: 12px;
+      opacity: .75;
+      border: 1px solid #1f1f1f;
+      background: #0b0b0b;
+      border-radius: 999px;
+      padding: 6px 10px;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btnSmall {
+      padding: 7px 10px;
+      border-radius: 10px;
+      border: 1px solid #2a2a2a;
+      background: #101010;
+      color: #eaeaea;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .btnSmall:hover { border-color:#3a3a3a; }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      opacity: 0.9;
+      margin: 0 0 10px 0;
+    }
+    .hint { opacity: 0.7; }
+
+    .credits {
+      font-size:12px;
+      opacity:.75;
+      margin: 0 0 12px 0;
+      line-height: 1.35;
+    }
+    .credits a {
+      color: #00ff88;
+      text-decoration: none;
+    }
+    .credits a:hover { text-decoration: underline; }
+
+    .row { display: grid; gap: 10px; margin-top: 10px; }
+    .controls { display: grid; gap: 10px; }
+    .ctrl {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 10px;
+      align-items: center;
+      font-size: 13px;
+    }
+    input[type="range"] { width: 100%; }
+    input[type="color"] {
+      width: 100%;
+      height: 34px;
+      border: 0;
+      background: transparent;
+      padding: 0;
+    }
+    select, button {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #2a2a2a;
+      background: #101010;
+      color: #eaeaea;
+      cursor: pointer;
+      font-size: 13px;
+      box-sizing: border-box;
+    }
+    button:hover { border-color: #3a3a3a; }
+
+    .btnRow4 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    footer {
+      text-align:center;
+      font-size:12px;
+      opacity:.6;
+      padding: 18px 0 8px;
+    }
+    footer a {
+      color:#00ff88;
+      text-decoration:none;
+    }
+    footer a:hover { text-decoration: underline; }
+
+    /* About modal */
+    dialog {
+      border: 1px solid #2a2a2a;
+      background: #0b0b0b;
+      color: #eaeaea;
+      border-radius: 14px;
+      padding: 0;
+      width: min(720px, calc(100vw - 28px));
+      box-shadow: 0 20px 80px rgba(0,0,0,.65);
+    }
+    dialog::backdrop {
+      background: rgba(0,0,0,.6);
+    }
+    .modalHead {
+      padding: 14px 14px 10px 14px;
+      border-bottom: 1px solid #1f1f1f;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .modalTitle {
+      margin:0;
+      font-size: 14px;
+      font-weight: 650;
+      letter-spacing:.2px;
+    }
+    .modalBody {
+      padding: 14px;
+      font-size: 13px;
+      line-height: 1.45;
+      color: #d8d8d8;
+    }
+    .modalBody code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      background: #070707;
+      border: 1px solid #1f1f1f;
+      border-radius: 8px;
+      padding: 2px 6px;
+    }
+    .modalBody a {
+      color:#00ff88;
+      text-decoration:none;
+    }
+    .modalBody a:hover { text-decoration: underline; }
+    .modalFoot {
+      padding: 12px 14px 14px 14px;
+      border-top: 1px solid #1f1f1f;
+      display:flex;
+      justify-content:flex-end;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <h2 class="title">Cryptoglyph-Necrotek</h2>
+    <div class="topActions">
+      <div class="pill">v0.2</div>
+      <button id="btnAbout" class="btnSmall" type="button">About</button>
+    </div>
+  </div>
+
+  <div class="meta">
+    <div id="status">Ready.</div>
+    <div class="hint">Runs locally (no server required). Resize preview by dragging its bottom-right corner.</div>
+  </div>
+
+  <div class="credits">
+    Concept reference:
+    <a href="https://strolen.com/viewing/Cryptic_Language_-_Times_Ultra-New_Roman" target="_blank" rel="noopener">Cryptic Language – Times Ultra-New Roman</a><br/>
+    Original Java implementer (archived/non-functional): 
+    <a href="http://tim.hibal.org/strolen/times_ultra_new_roman/times_ultra_new_roman_java.zip" target="_blank" rel="noopener">times_ultra_new_roman_java.zip</a><br/>
+    Modern browser implementation (Necron-inspired): <strong>EXIOUS</strong><br/>
+    Additional implementation assistance: <strong>ChatGPT (OpenAI)</strong>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="row">
+        <label style="font-size:13px; opacity:.9;">Text</label>
+        <textarea id="inputText" spellcheck="false"></textarea>
+
+        <label style="font-size:13px; opacity:.9;">Presets</label>
+        <select id="preset">
+          <option value="">— choose —</option>
+          <option value="The quick brown fox jumped over the lazy dog.">Pangram</option>
+          <option value="I am persistent.">Short</option>
+          <option value="The Citadel is a place of creative freedom for role players and game masters with awesome ideas. Over time, the Citadel has turned into a bottomless resource of creativity and inspiration for thousands.">Original sample</option>
+        </select>
+
+        <div class="btnRow4">
+          <button id="btnClear" type="button">Clear</button>
+          <button id="btnCopy" type="button">Copy PNG</button>
+          <button id="btnDownload" type="button">Download PNG</button>
+          <button id="btnExportSvg" type="button">Export SVG</button>
+        </div>
+      </div>
+
+      <hr style="border:0; border-top:1px solid #1f1f1f; margin:14px 0;">
+
+      <div class="controls">
+        <div class="ctrl">
+          <div>Color</div>
+          <input id="color" type="color" value="#00ff00" />
+        </div>
+
+        <div class="ctrl">
+          <div>Stroke</div>
+          <input id="stroke" type="range" min="1" max="6" step="0.5" value="2" />
+        </div>
+
+        <div class="ctrl">
+          <div>Glow</div>
+          <select id="glowOn">
+            <option value="1" selected>On</option>
+            <option value="0">Off</option>
+          </select>
+        </div>
+
+        <div class="ctrl">
+          <div>Glow strength</div>
+          <input id="glow" type="range" min="0" max="24" step="1" value="8" />
+        </div>
+
+        <div class="ctrl">
+          <div>Scale</div>
+          <input id="scale" type="range" min="0.5" max="2.0" step="0.05" value="1" />
+        </div>
+
+        <div class="ctrl">
+          <div>X center</div>
+          <input id="xpos" type="range" min="60" max="500" step="1" value="180" />
+        </div>
+
+        <div class="ctrl">
+          <div>Connectors</div>
+          <select id="connectors">
+            <option value="1" selected>Enabled</option>
+            <option value="0">Disabled</option>
+          </select>
+        </div>
+
+        <div class="ctrl">
+          <div>Wrap text</div>
+          <select id="wrapText">
+            <option value="0" selected>Off</option>
+            <option value="1">On (columns)</option>
+          </select>
+        </div>
+
+        <div class="ctrl">
+          <div>Column gap</div>
+          <input id="colGap" type="range" min="30" max="220" step="5" value="90" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div id="previewPane">
+        <canvas id="alienCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Cryptoglyph-Necrotek • v0.2 • MIT License • Implemented by <strong>EXIOUS</strong>
+  </footer>
+</div>
+
+<!-- About modal -->
+<dialog id="aboutDialog" aria-labelledby="aboutTitle">
+  <div class="modalHead">
+    <h3 id="aboutTitle" class="modalTitle">About Cryptoglyph-Necrotek — v0.2</h3>
+    <button id="btnCloseAboutX" class="btnSmall" type="button" aria-label="Close">✕</button>
+  </div>
+  <div class="modalBody">
+    <p>
+      <strong>Cryptoglyph-Necrotek</strong> is a local-run browser tool for rendering a stylized glyph script and exporting
+      the result as <code>PNG</code> (raster) or <code>SVG</code> (vector).
+    </p>
+    <p>
+      <strong>Credits</strong><br/>
+      • Concept reference: <a href="https://strolen.com/viewing/Cryptic_Language_-_Times_Ultra-New_Roman" target="_blank" rel="noopener">Cryptic Language – Times Ultra-New Roman</a><br/>
+      • Original Java implementation (archived/non-functional): <a href="http://tim.hibal.org/strolen/times_ultra_new_roman/times_ultra_new_roman_java.zip" target="_blank" rel="noopener">times_ultra_new_roman_java.zip</a><br/>
+      • Modern browser implementation (Necron-inspired): <strong>EXIOUS</strong><br/>
+    Additional implementation assistance: <strong>ChatGPT (OpenAI)</strong>
+    </p>
+    <p>
+      <strong>Notes</strong><br/>
+      • Runs directly from <code>file://</code> — no local server required.<br/>
+      • SVG export is clean vector geometry (no glow/blur filters).<br/>
+      • Wrap mode lays out text into columns based on the preview window height.
+    </p>
+    <p style="margin-bottom:0;">
+      <strong>License</strong><br/>
+      This project is released under the MIT License (see the header comment at the top of this file).
+    </p>
+  </div>
+  <div class="modalFoot">
+    <button id="btnCloseAbout" class="btnSmall" type="button">Close</button>
+  </div>
+</dialog>
+
+<script>
+  /*
+    Cryptic Language (Crypt) — v0.2
+    Implementer: EXIOUS
+    License: MIT (see file header)
+
+    GitHub export notes:
+    - This is a single-file app. For a repo, commit as: /index.html
+    - Optional: add README.md linking to the credits above.
+  */
+
+  // --------- Base Renderer (Canvas implementation uses ctx; SVG/Null override primitives) ---------
+  class AlienRenderer {
+    constructor(ctx) { this.ctx = ctx; }
+
+    setStyle({ strokeWidth, color }) {
+      if (!this.ctx) return;
+      this.ctx.lineWidth = strokeWidth;
+      this.ctx.strokeStyle = color;
+      this.ctx.lineCap = "round";
+      this.ctx.lineJoin = "round";
+    }
+
+    drawCharacter(X, Y, dS, dE, c) {
+      const lower = c.toLowerCase();
+      const fn = this.characterMap[lower];
+      if (fn) return fn(X, Y, dS, dE);
+      if (c === ".") return this.drawPeriod(X, Y, dS, dE);
+      if (c === ",") return this.drawComma(X, Y, dS, dE);
+      if (c === " ") return Y + 25;
+      return Y;
+    }
+
+    // Primitives (Canvas default)
+    drawOval(x, y, w, h) {
+      const ctx = this.ctx;
+      ctx.beginPath();
+      ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    drawLine(x1, y1, x2, y2) {
+      const ctx = this.ctx;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+
+    drawArcTopHalf(cx, cy, rx, ry) {
+      const ctx = this.ctx;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI, true);
+      ctx.stroke();
+    }
+
+
+    drawArcBottomHalf(cx, cy, rx, ry) {
+      const ctx = this.ctx;
+      ctx.beginPath();
+      // Canvas angles: 0 is to the right; with Y down, (0→π) clockwise draws the LOWER half.
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI, false);
+      ctx.stroke();
+    }
+
+    drawSpacer(X, Y) { this.drawLine(X, Y, X, Y + 10); return Y + 10; }
+
+    // NOTE: connector geometry remains as previously compiled.
+    // If you want the arc/oval overlap fix applied globally, tell me and I'll patch it in this compiled file too.
+    drawConnect(X, Y) {
+      // top stem
+      this.drawLine(X, Y, X, Y + 6);
+
+      // oval
+      // spans: (Y+6) .. (Y+17)
+      this.drawOval(X - 5, Y + 6, 11, 11);
+
+      // bridge to arc start
+      this.drawLine(X, Y + 17, X, Y + 20);
+
+      // bottom-half arc (bulges downward)
+      // spans roughly: (Y+20) .. (Y+27)
+      this.drawArcBottomHalf(X, Y + 20, 8, 7);
+
+      // tail continues directly from arc bottom
+      this.drawLine(X, Y + 27, X, Y + 31);
+
+      return Y + 31;
+    }
+
+    characterMap = {
+      a:(X,Y,dS,dE)=>this.drawA(X,Y,dS,dE),
+      b:(X,Y,dS,dE)=>this.drawB(X,Y,dS,dE),
+      c:(X,Y,dS,dE)=>this.drawC(X,Y,dS,dE),
+      d:(X,Y,dS,dE)=>this.drawD(X,Y,dS,dE),
+      e:(X,Y,dS,dE)=>this.drawE(X,Y,dS,dE),
+      f:(X,Y,dS,dE)=>this.drawF(X,Y,dS,dE),
+      g:(X,Y,dS,dE)=>this.drawG(X,Y,dS,dE),
+      h:(X,Y,dS,dE)=>this.drawH(X,Y,dS,dE),
+      i:(X,Y,dS,dE)=>this.drawI(X,Y,dS,dE),
+      j:(X,Y,dS,dE)=>this.drawJ(X,Y,dS,dE),
+      k:(X,Y,dS,dE)=>this.drawK(X,Y,dS,dE),
+      l:(X,Y,dS,dE)=>this.drawL(X,Y,dS,dE),
+      m:(X,Y,dS,dE)=>this.drawM(X,Y,dS,dE),
+      n:(X,Y,dS,dE)=>this.drawN(X,Y,dS,dE),
+      o:(X,Y,dS,dE)=>this.drawO(X,Y,dS,dE),
+      p:(X,Y,dS,dE)=>this.drawP(X,Y,dS,dE),
+      q:(X,Y,dS,dE)=>this.drawQ(X,Y,dS,dE),
+      r:(X,Y,dS,dE)=>this.drawR(X,Y,dS,dE),
+      s:(X,Y,dS,dE)=>this.drawS(X,Y,dS,dE),
+      t:(X,Y,dS,dE)=>this.drawT(X,Y,dS,dE),
+      u:(X,Y,dS,dE)=>this.drawU(X,Y,dS,dE),
+      v:(X,Y,dS,dE)=>this.drawV(X,Y,dS,dE),
+      w:(X,Y,dS,dE)=>this.drawW(X,Y,dS,dE),
+      x:(X,Y,dS,dE)=>this.drawX(X,Y,dS,dE),
+      y:(X,Y,dS,dE)=>this.drawY(X,Y,dS,dE),
+      z:(X,Y,dS,dE)=>this.drawZ(X,Y,dS,dE),
+    };
+
+    // Glyphs (ported geometry)
+    drawA(X,Y,dS,dE){ this.drawOval(X-12,Y,25,25); this.drawLine(X-25,Y+12,X-13,Y+12); this.drawLine(X+25,Y+12,X+13,Y+12); if(dE){this.drawSpacer(X,Y+25);Y+=10;} return Y+25; }
+    drawB(X,Y,dS,dE){ this.drawLine(X-8,Y,X+8,Y); this.drawOval(X-18,Y-5,10,10); this.drawOval(X+8,Y-5,10,10); if(dE){this.drawSpacer(X,Y+1);Y+=10;} return Y+1; }
+    drawC(X,Y,dS,dE){ this.drawOval(X-5,Y,11,11); this.drawLine(X-10,Y-3,X-5,Y+2); this.drawLine(X+10,Y-3,X+5,Y+2); if(dE){this.drawSpacer(X,Y+11);Y+=10;} return Y+11; }
+    drawD(X,Y,dS,dE){ this.drawLine(X,Y,X,Y+10); this.drawLine(X-25,Y,X+25,Y); this.drawLine(X-25,Y+7,X+25,Y+7); this.drawLine(X-25,Y+15,X-5,Y+15); this.drawLine(X+25,Y+15,X+5,Y+15); this.drawOval(X-5,Y+10,10,10); if(dE){this.drawSpacer(X,Y+20);Y+=10;} return Y+20; }
+    drawE(X,Y,dS,dE){ this.drawOval(X-12,Y,25,25); if(dE){this.drawSpacer(X,Y+25);Y+=10;} return Y+25; }
+    drawF(X,Y,dS,dE){ this.drawLine(X-25,Y+5,X-5,Y+5); this.drawLine(X+25,Y+5,X+5,Y+5); this.drawOval(X-5,Y,10,10); this.drawLine(X-25,Y+12,X+25,Y+12); this.drawLine(X-25,Y+20,X+25,Y+20); this.drawLine(X,Y+10,X,Y+20); if(dE){this.drawSpacer(X,Y+20);Y+=10;} return Y+20; }
+    drawG(X,Y,dS,dE){ this.drawLine(X,Y,X,Y+7); this.drawLine(X-25,Y,X+25,Y); this.drawLine(X-25,Y+7,X+25,Y+7); if(dE){this.drawSpacer(X,Y+7);Y+=10;} return Y+7; }
+    drawH(X,Y,dS,dE){ this.drawOval(X-12,Y,25,25); this.drawOval(X-22,Y+7,10,10); this.drawOval(X+13,Y+7,10,10); if(dE){this.drawSpacer(X,Y+25);Y+=10;} return Y+25; }
+    drawI(X,Y,dS,dE){ this.drawOval(X-5,Y,11,11); if(dE){this.drawSpacer(X,Y+11);Y+=10;} return Y+11; }
+    drawJ(X,Y,dS,dE){ this.drawOval(X-11,Y-2,11,11); this.drawOval(X,Y-2,11,11); if(dE){this.drawSpacer(X,Y+5);Y+=9;} return Y+7; }
+    drawK(X,Y,dS,dE){ this.drawOval(X-5,Y,11,11); this.drawLine(X-10,Y+13,X-5,Y+8); this.drawLine(X+10,Y+13,X+5,Y+8); if(dE){this.drawSpacer(X,Y+11);Y+=10;} return Y+11; }
+    drawL(X,Y,dS,dE){ this.drawOval(X-12,Y,25,25); this.drawLine(X-25,Y+12,X-13,Y+12); this.drawLine(X+25,Y+12,X+13,Y+12); this.drawLine(X+20,Y-2,X+11,Y+5); this.drawLine(X-20,Y-2,X-11,Y+5); this.drawLine(X+20,Y+27,X+11,Y+20); this.drawLine(X-20,Y+27,X-11,Y+20); if(dE){this.drawSpacer(X,Y+25);Y+=10;} return Y+25; }
+    drawM(X,Y,dS,dE){ this.drawOval(X-5,Y,11,11); this.drawOval(X-25,Y,11,11); this.drawOval(X+13,Y,11,11); if(dE){this.drawLine(X-19,Y+11,X,Y+30);Y+=19;} return Y+11; }
+    drawN(X,Y,dS,dE){ if(dS){this.drawLine(X,Y,X+13,Y+13);Y+=18;} this.drawOval(X-18,Y-5,10,10); this.drawOval(X+8,Y-5,10,10); this.drawLine(X-8,Y,X+8,Y); if(dE){this.drawLine(X-13,Y+5,X,Y+18);Y+=18;} return Y+1; }
+    drawO(X,Y,dS,dE){ this.drawOval(X-12,Y,25,25); this.drawLine(X-25,Y+12,X-13,Y+12); this.drawLine(X+25,Y+12,X+13,Y+12); this.drawLine(X+20,Y+27,X+11,Y+20); this.drawLine(X-20,Y+27,X-11,Y+20); if(dE){this.drawSpacer(X,Y+25);Y+=10;} return Y+25; }
+    drawP(X,Y,dS,dE){ this.drawOval(X-5,Y,11,11); this.drawOval(X-25,Y,11,11); this.drawOval(X+13,Y,11,11); this.drawLine(X-14,Y+6,X-5,Y+6); this.drawLine(X+13,Y+6,X+6,Y+6); this.drawLine(X-19,Y+11,X-19,Y+66); this.drawLine(X+19,Y+11,X+19,Y+66); this.drawOval(X-25,Y+66,11,11); this.drawOval(X+13,Y+66,11,11); if(dE){this.drawLine(X,Y+11,X,Y+90);Y+=13;} return Y+77; }
+    drawQ(X,Y,dS,dE){ this.drawOval(X-12,Y,25,25); this.drawLine(X,Y+25,X+8,Y+33); this.drawLine(X,Y+25,X-8,Y+33); this.drawOval(X+8,Y+28,11,11); this.drawOval(X-19,Y+28,11,11); this.drawLine(X+8,Y+33,X,Y+41); this.drawLine(X-8,Y+33,X,Y+41); this.drawOval(X-5,Y+41,11,11); if(dE){this.drawSpacer(X,Y+52);Y+=10;} return Y+52; }
+    drawR(X,Y,dS,dE){ if(dS){this.drawLine(X,Y,X,Y+66);} this.drawOval(X-25,Y,11,11); this.drawOval(X+13,Y,11,11); this.drawLine(X-19,Y+11,X-19,Y+66); this.drawLine(X+19,Y+11,X+19,Y+66); this.drawOval(X-25,Y+66,11,11); this.drawOval(X-5,Y+66,11,11); this.drawOval(X+13,Y+66,11,11); this.drawLine(X-14,Y+71,X-5,Y+71); this.drawLine(X+13,Y+71,X+6,Y+71); if(dE){this.drawSpacer(X,Y+77);Y+=10;} return Y+77; }
+    drawS(X,Y,dS,dE){ this.drawLine(X,Y,X,Y+15); this.drawLine(X-25,Y,X+25,Y); this.drawLine(X-25,Y+7,X+25,Y+7); this.drawLine(X-25,Y+15,X+25,Y+15); if(dE){this.drawSpacer(X,Y+15);Y+=10;} return Y+15; }
+    drawT(X,Y,dS,dE){ this.drawLine(X,Y,X,Y+5); this.drawLine(X-25,Y,X+25,Y); this.drawLine(X-25,Y+10,X-5,Y+10); this.drawLine(X+25,Y+10,X+5,Y+10); this.drawOval(X-5,Y+5,10,10); this.drawLine(X-25,Y+20,X+25,Y+20); this.drawLine(X,Y+15,X,Y+20); if(dE){this.drawSpacer(X,Y+20);Y+=10;} return Y+20; }
+    drawU(X,Y,dS,dE){ this.drawOval(X-12,Y,25,25); this.drawLine(X,Y+25,X+8,Y+33); this.drawLine(X,Y+25,X-8,Y+33); this.drawOval(X+7,Y+32,11,11); this.drawOval(X-17,Y+32,11,11); if(dE){this.drawLine(X,Y+25,X,Y+50);Y+=25;} return Y+25; }
+    drawV(X,Y,dS,dE){ this.drawOval(X-25,Y-5,11,11); this.drawOval(X+13,Y-5,11,11); this.drawLine(X-14,Y,X+13,Y); this.drawOval(X-5,Y+11,11,11); this.drawLine(X+19,Y+6,X+6,Y+17); this.drawLine(X-19,Y+6,X-5,Y+17); if(dE){this.drawSpacer(X,Y+23);Y+=10;} return Y+23; }
+    drawW(X,Y,dS,dE){ this.drawOval(X-25,Y-5,11,11); this.drawOval(X+13,Y-5,11,11); this.drawLine(X-14,Y,X+13,Y); this.drawLine(X+19,Y+6,X+19,Y+11); this.drawLine(X-19,Y+6,X-19,Y+11); this.drawOval(X-25,Y+11,11,11); this.drawOval(X+13,Y+11,11,11); this.drawLine(X-14,Y+16,X+13,Y+16); if(dE){this.drawLine(X,Y+16,X,Y+30);Y+=14;} return Y+16; }
+    drawX(X,Y,dS,dE){ if(dS){this.drawLine(X,Y,X,Y+8);Y+=8;} this.drawOval(X-12,Y,25,25); this.drawLine(X+14,Y+2,X+11,Y+5); this.drawLine(X-14,Y+2,X-11,Y+5); this.drawLine(X+14,Y+23,X+11,Y+20); this.drawLine(X-14,Y+23,X-11,Y+20); this.drawOval(X-25,Y-7,11,11); this.drawOval(X+14,Y-7,11,11); this.drawOval(X-25,Y+21,11,11); this.drawOval(X+14,Y+21,11,11); if(dE){this.drawSpacer(X,Y+25);Y+=10;} return Y+25; }
+    drawY(X,Y,dS,dE){ if(dS){this.drawLine(X,Y,X,Y+8);Y+=8;} this.drawOval(X-12,Y,25,25); this.drawLine(X+14,Y+2,X+11,Y+5); this.drawLine(X-14,Y+2,X-11,Y+5); this.drawOval(X-25,Y-7,11,11); this.drawOval(X+14,Y-7,11,11); if(dE){this.drawSpacer(X,Y+25);Y+=10;} return Y+25; }
+    drawZ(X,Y,dS,dE){ this.drawOval(X-5,Y,11,11); this.drawLine(X-4,Y+9,X-11,Y+16); this.drawLine(X+4,Y+9,X+11,Y+16); this.drawOval(X-23,Y+14,11,11); this.drawOval(X+12,Y+14,11,11); this.drawLine(X-4,Y+30,X-11,Y+23); this.drawLine(X+4,Y+30,X+11,Y+23); this.drawOval(X-5,Y+31,11,11); if(dE){this.drawSpacer(X,Y+42);Y+=10;} return Y+42; }
+    drawPeriod(X,Y,dS,dE){ this.drawOval(X-12,Y,25,25); this.drawOval(X-5,Y+7,11,11); if(dE){this.drawSpacer(X,Y+25);Y+=10;} return Y+25; }
+    drawComma(X,Y,dS,dE){ this.drawLine(X+4,Y+8,X+15,Y+8); if(dE){this.drawSpacer(X,Y+25);Y+=10;} return Y+8; }
+  }
+
+  class NullAlienRenderer extends AlienRenderer {
+    constructor(){ super(null); }
+    setStyle(){}
+    drawOval(){}
+    drawLine(){}
+    drawArcTopHalf(){}
+    drawArcBottomHalf() {}
+  }
+
+  class SvgRecorder {
+    constructor({ stroke, strokeWidth }) {
+      this.stroke = stroke;
+      this.strokeWidth = strokeWidth;
+      this.items = [];
+    }
+    line(x1, y1, x2, y2) { this.items.push({ t:"line", x1, y1, x2, y2 }); }
+    ellipse(cx, cy, rx, ry) { this.items.push({ t:"ellipse", cx, cy, rx, ry }); }
+    arcTopHalf(cx, cy, rx, ry) { this.items.push({ t:"arcTop", cx, cy, rx, ry }); }
+
+    arcBottomHalf(cx, cy, rx, ry) { this.items.push({ t:"arcBottom", cx, cy, rx, ry }); }
+    toSvg({ width, height, background = "#000" }) {
+      const esc = (s) => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+      const parts = [];
+      parts.push(`<?xml version="1.0" encoding="UTF-8"?>`);
+      parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`);
+      if (background) parts.push(`<rect x="0" y="0" width="${width}" height="${height}" fill="${esc(background)}"/>`);
+
+      const common = `fill="none" stroke="${esc(this.stroke)}" stroke-width="${this.strokeWidth}" stroke-linecap="round" stroke-linejoin="round"`;
+
+      for (const it of this.items) {
+        if (it.t === "line") {
+          parts.push(`<line ${common} x1="${it.x1}" y1="${it.y1}" x2="${it.x2}" y2="${it.y2}"/>`);
+        } else if (it.t === "ellipse") {
+          parts.push(`<ellipse ${common} cx="${it.cx}" cy="${it.cy}" rx="${it.rx}" ry="${it.ry}"/>`);
+        } else if (it.t === "arcTop") {
+          const x1 = it.cx + it.rx, y1 = it.cy;
+          const x2 = it.cx - it.rx, y2 = it.cy;
+          parts.push(`<path ${common} d="M ${x1} ${y1} A ${it.rx} ${it.ry} 0 0 0 ${x2} ${y2}"/>`);
+        }
+        else if (it.t === "arcBottom") {
+          const x1 = it.cx + it.rx, y1 = it.cy;
+          const x2 = it.cx - it.rx, y2 = it.cy;
+          // bottom half: sweep=1
+          parts.push(`<path ${common} d="M ${x1} ${y1} A ${it.rx} ${it.ry} 0 0 1 ${x2} ${y2}"/>`);
+        }
+      }
+
+      parts.push(`</svg>`);
+      return parts.join("\n");
+    }
+  }
+
+  class SvgAlienRenderer extends AlienRenderer {
+    constructor(rec){ super(null); this.rec = rec; }
+    setStyle(){}
+    drawOval(x, y, w, h) { this.rec.ellipse(x + w/2, y + h/2, w/2, h/2); }
+    drawLine(x1, y1, x2, y2) { this.rec.line(x1, y1, x2, y2); }
+    drawArcTopHalf(cx, cy, rx, ry) { this.rec.arcTopHalf(cx, cy, rx, ry); }
+    drawArcBottomHalf(cx, cy, rx, ry) { this.rec.arcBottomHalf(cx, cy, rx, ry); }
+  }
+
+  const connectorSet = new Set(["d","f","g","s","t"]);
+  const nullRenderer = new NullAlienRenderer();
+
+  function layoutAndRender({ renderer, cfg, heightPx }) {
+    const wrapEnabled = cfg.wrap;
+    const gap = cfg.colGap;
+    const maxY = (heightPx / cfg.scale) - 20;
+
+    let colIndex = 0;
+    let X = cfg.x + colIndex * gap;
+    let Y = 20;
+
+    const tokens = cfg.text.split(/(\s+)/).filter(t => t.length > 0);
+
+    function isConnectorPair(a, b) {
+      return connectorSet.has(a.toLowerCase()) && connectorSet.has(b.toLowerCase());
+    }
+
+    function drawStringAtCurrentPos(str) {
+      const localChars = [...str];
+      for (let i = 0; i < localChars.length; i++) {
+        const c = localChars[i];
+        const prev = (i === 0) ? null : localChars[i - 1];
+        const next = (i === localChars.length - 1) ? null : localChars[i + 1];
+
+        const dS = !(i === 0 || prev === " " || prev === ",");
+        const dE = !(i === localChars.length - 1 || next === " " || next === ",");
+
+        Y = renderer.drawCharacter(X, Y, dS, dE, c);
+
+        if (cfg.connectors && i !== localChars.length - 1 && isConnectorPair(c, localChars[i + 1])) {
+          Y = renderer.drawConnect(X, Y);
+        }
+      }
+    }
+
+    function measureHeightOfString(str) {
+      let tX = 0, tY = 20;
+      const localChars = [...str];
+
+      for (let i = 0; i < localChars.length; i++) {
+        const c = localChars[i];
+        const prev = (i === 0) ? null : localChars[i - 1];
+        const next = (i === localChars.length - 1) ? null : localChars[i + 1];
+
+        const dS = !(i === 0 || prev === " " || prev === ",");
+        const dE = !(i === localChars.length - 1 || next === " " || next === ",");
+
+        tY = nullRenderer.drawCharacter(tX, tY, dS, dE, c);
+
+        if (cfg.connectors && i !== localChars.length - 1 && isConnectorPair(c, localChars[i + 1])) {
+          tY = nullRenderer.drawConnect(tX, tY);
+        }
+      }
+
+      return tY - 20;
+    }
+
+    for (const token of tokens) {
+      if (/^\s+$/.test(token)) {
+        if (wrapEnabled && (Y + 25) > maxY) {
+          colIndex++;
+          X = cfg.x + colIndex * gap;
+          Y = 20;
+        }
+        Y += 25;
+        continue;
+      }
+
+      if (wrapEnabled) {
+        const needed = measureHeightOfString(token);
+        if ((Y + needed) > maxY && Y > 20) {
+          colIndex++;
+          X = cfg.x + colIndex * gap;
+          Y = 20;
+        }
+      }
+
+      drawStringAtCurrentPos(token);
+    }
+
+    return { columns: colIndex + 1, endY: Y };
+  }
+
+  const previewPane = document.getElementById("previewPane");
+  const canvas = document.getElementById("alienCanvas");
+  const ctx = canvas.getContext("2d");
+
+  const status = document.getElementById("status");
+  const textarea = document.getElementById("inputText");
+  const preset = document.getElementById("preset");
+
+  const color = document.getElementById("color");
+  const stroke = document.getElementById("stroke");
+  const glowOn = document.getElementById("glowOn");
+  const glow = document.getElementById("glow");
+  const scale = document.getElementById("scale");
+  const xpos = document.getElementById("xpos");
+  const connectors = document.getElementById("connectors");
+  const wrapText = document.getElementById("wrapText");
+  const colGap = document.getElementById("colGap");
+
+  const btnClear = document.getElementById("btnClear");
+  const btnCopy = document.getElementById("btnCopy");
+  const btnDownload = document.getElementById("btnDownload");
+  const btnExportSvg = document.getElementById("btnExportSvg");
+
+  const btnAbout = document.getElementById("btnAbout");
+  const aboutDialog = document.getElementById("aboutDialog");
+  const btnCloseAbout = document.getElementById("btnCloseAbout");
+  const btnCloseAboutX = document.getElementById("btnCloseAboutX");
+
+  const renderer = new AlienRenderer(ctx);
+
+  function setupHiDPI() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = previewPane.getBoundingClientRect();
+
+    canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  let rafPending = false;
+
+  function currentCfg() {
+    return {
+      text: textarea.value,
+      color: color.value,
+      strokeWidth: parseFloat(stroke.value),
+      glowOn: glowOn.value === "1",
+      glow: parseFloat(glow.value),
+      scale: parseFloat(scale.value),
+      x: parseFloat(xpos.value),
+      connectors: connectors.value === "1",
+      wrap: wrapText.value === "1",
+      colGap: parseFloat(colGap.value),
+    };
+  }
+
+  function renderNow() {
+    rafPending = false;
+    setupHiDPI();
+
+    const cfg = currentCfg();
+    renderer.setStyle({ strokeWidth: cfg.strokeWidth, color: cfg.color });
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (cfg.glowOn) {
+      ctx.shadowColor = cfg.color;
+      ctx.shadowBlur = cfg.glow;
+    } else {
+      ctx.shadowBlur = 0;
+    }
+
+    ctx.save();
+    ctx.scale(cfg.scale, cfg.scale);
+
+    const rect = previewPane.getBoundingClientRect();
+    const result = layoutAndRender({ renderer, cfg, heightPx: rect.height });
+
+    ctx.restore();
+
+    status.textContent = `Rendered. Columns: ${result.columns} • Preview: ${Math.round(rect.width)}×${Math.round(rect.height)} • Scale: ${cfg.scale.toFixed(2)}`;
+  }
+
+  function requestRender() {
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(renderNow);
+  }
+
+  textarea.addEventListener("input", requestRender);
+  [color, stroke, glowOn, glow, scale, xpos, connectors, wrapText, colGap].forEach(el => el.addEventListener("input", requestRender));
+  window.addEventListener("resize", requestRender);
+
+  const ro = new ResizeObserver(() => requestRender());
+  ro.observe(previewPane);
+
+  preset.addEventListener("change", () => {
+    if (preset.value) textarea.value = preset.value;
+    requestRender();
+  });
+
+  btnClear.addEventListener("click", () => {
+    textarea.value = "";
+    requestRender();
+  });
+
+  btnDownload.addEventListener("click", () => {
+    const link = document.createElement("a");
+    link.download = "cryptic-language.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  });
+
+  btnCopy.addEventListener("click", async () => {
+    try {
+      if (!navigator.clipboard || !window.ClipboardItem) throw new Error("Clipboard image API not available.");
+      const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      status.textContent = "Copied PNG to clipboard.";
+    } catch (e) {
+      status.textContent = "Copy failed (browser security). Use Download PNG instead.";
+    }
+  });
+
+  btnExportSvg.addEventListener("click", () => {
+    const width = Math.max(1, Math.round(previewPane.clientWidth));
+    const height = Math.max(1, Math.round(previewPane.clientHeight));
+
+    const cfg = currentCfg();
+    // Explicitly exclude glow from export
+    cfg.glowOn = false;
+    cfg.glow = 0;
+
+    const rec = new SvgRecorder({ stroke: cfg.color, strokeWidth: cfg.strokeWidth });
+    const svgRenderer = new SvgAlienRenderer(rec);
+
+    const s = cfg.scale;
+    const oLine = rec.line.bind(rec);
+    const oEllipse = rec.ellipse.bind(rec);
+    const oArc = rec.arcTopHalf.bind(rec);
+    const oArcB = rec.arcBottomHalf.bind(rec);
+    
+
+    rec.line = (x1,y1,x2,y2) => oLine(x1*s, y1*s, x2*s, y2*s);
+    rec.ellipse = (cx,cy,rx,ry) => oEllipse(cx*s, cy*s, rx*s, ry*s);
+    rec.arcTopHalf = (cx,cy,rx,ry) => oArc(cx*s, cy*s, rx*s, ry*s);
+    rec.arcBottomHalf = (cx,cy,rx,ry) => oArcB(cx*s, cy*s, rx*s, ry*s);
+    
+
+    layoutAndRender({ renderer: svgRenderer, cfg, heightPx: height });
+
+    rec.line = oLine; rec.ellipse = oEllipse; rec.arcTopHalf = oArc; rec.arcBottomHalf = oArcB;
+
+    const svg = rec.toSvg({ width, height, background: "#000" });
+    const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cryptic-language.svg";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(url);
+    status.textContent = "Exported SVG (no glow).";
+  });
+
+  // About modal
+  function openAbout() {
+    if (typeof aboutDialog.showModal === "function") aboutDialog.showModal();
+    else aboutDialog.setAttribute("open","");
+  }
+  function closeAbout() {
+    if (typeof aboutDialog.close === "function") aboutDialog.close();
+    else aboutDialog.removeAttribute("open");
+  }
+  btnAbout.addEventListener("click", openAbout);
+  btnCloseAbout.addEventListener("click", closeAbout);
+  btnCloseAboutX.addEventListener("click", closeAbout);
+  aboutDialog.addEventListener("click", (e) => {
+    // click outside content closes
+    const rect = aboutDialog.getBoundingClientRect();
+    const inDialog = (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom);
+    if (!inDialog) closeAbout();
+  });
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && aboutDialog.open) closeAbout();
+  });
+
+  textarea.value = "The Citadel is a place of creative freedom for role players and game masters with awesome ideas. Over time, the Citadel has turned into a bottomless resource of creativity and inspiration for thousands.";
+  requestRender();
+</script>
+</body>
+</html>
